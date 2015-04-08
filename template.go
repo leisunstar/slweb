@@ -5,18 +5,29 @@ import (
 )
 
 var (
-    slTemplateFuncMap template.FuncMap
-    SlTemplates map[string]*template.Template
-
+    sltemplate *SlTemplate
 )
 
-func init(){
-    SlTemplates = make(map[string]*template.Template)
-    slTemplateFuncMap = make(template.FuncMap)
+type SlTemplate struct {
+    BaseTemplate   map[string]string
+    Templates      map[string]*template.Template
+    FuncMap        template.FuncMap
 }
 
-func AddFuncMap(key string, funname interface{}) error {
-    slTemplateFuncMap[key] = funname
+func NewSlTemplate()(*SlTemplate){
+    return &SlTemplate{
+        BaseTemplate: make(map[string]string, 0),
+        Templates: make(map[string]*template.Template),
+        FuncMap : make(template.FuncMap),
+    }
+}
+
+func init(){
+    sltemplate = NewSlTemplate()
+}
+
+func AddFuncMap(key string, funcName interface{}) error {
+    sltemplate.FuncMap[key] = funcName
     return nil
 }
 
@@ -28,6 +39,6 @@ func AddTemplate(name string)(t *template.Template, err error){
     if err != nil{
         Logs.Error("template file %s not found err:%v", name, err)
     }
-    SlTemplates[name] = t
+    sltemplate.Templates[name] = t
     return
 }

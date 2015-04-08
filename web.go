@@ -59,6 +59,7 @@ func (h handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         return
     }
 	if isFile {
+
 		return
 	}
 	return
@@ -80,6 +81,10 @@ func (h handle) match(r *http.Request) (handleFunc, int, bool) {
 		}
 	}
 	return nil, http.StatusNotFound, false
+}
+
+func StaticUrl(staticPath, filePath string){
+
 }
 
 func Router(uri string, method string, handleFunc handleFunc) {
@@ -134,5 +139,4 @@ func defaultNotAllow(c *Controller) {
     return
 }
 
-//TODO 静态页面
-//TODO 静态模板
+//TODO 静态文件

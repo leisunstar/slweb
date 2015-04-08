@@ -29,7 +29,7 @@ func (c *Controller) render(name string) {
     if name[0] != '/' {
         name = "/" + name
     }
-    t, ok := SlTemplates[name]
+    t, ok := sltemplate.Templates[name]
     if !ok || Debug{
         t, err = AddTemplate(name)
         if err != nil{
@@ -38,7 +38,7 @@ func (c *Controller) render(name string) {
             return
         }
     }
-    Logs.Debug("SlTemplates %v", SlTemplates)
+    Logs.Debug("SlTemplates %v", sltemplate.Templates)
     err = t.Execute(c.Response, c.Result)
     if err != nil{
         Logs.Error("Execute err %v", err)
