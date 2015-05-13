@@ -1,119 +1,79 @@
 package web
 
 import (
-	"net/http"
-	"strings"
-	"time"
+	"fmt"
 	"github.com/astaxie/beego/logs"
-    "fmt"
+	"net/http"
+	"time"
 )
 
 var (
-	Addr           string
-	Routers        []*router
-	NotAllow	handleFunc
-	NotFound	handleFunc
-	Logs		*logs.BeeLogger
-	Debug		bool
-    TemplatePath string
+	Addr          string //地址
+	Routers       []*router
+	NotAllow      handleFunc
+	NotFound      handleFunc
+	StaticService handleFunc
+	Logs          *logs.BeeLogger
+	Debug         bool
+	TemplatePath  string
+	StaticPath    string //绝对路径
 )
 
 type App struct {
 	handle *handle
-	addr    string
-	debug	bool
-
+	addr   string
+	debug  bool
 }
 
-type handle struct {
-	Routers []*router
-	notAllow handleFunc
-	notFound handleFunc
-}
-
-// return true is return
-type handleFunc func(*Controller)
-
-//control router
-func (h handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := &Controller{
-		Response: w,
-		Request:  r,
-		Result:   make(map[string]interface{}),
-		Internal: make(map[string]interface{}),
+//添加静态文件目录
+func Static(staticPath, staticfilePath string) {
+	StaticPath = staticfilePath
+	r := &router{
+		uri:    staticPath,
+		isFile: true,
 	}
-	handle, status, isFile := h.match(r)
-	if status == http.StatusOK {
-		handle(c)
-		Logs.Info("%s %s", r.Method, r.URL)
-		return
-	}
-	if status == http.StatusNotFound {
-		h.notFound(c)
-		Logs.Info("%s %s Not Found", r.Method, r.URL)
-		return
-	}
-	if status == http.StatusMethodNotAllowed {
-        Logs.Info("%s %s 404", r.Method, r.URL)
-        h.notAllow(c)
-        return
-    }
-	if isFile {
-
-		return
-	}
-	return
-}
-
-func (h handle) match(r *http.Request) (handleFunc, int, bool) {
-	method := r.Method
-	path := strings.ToLower(r.URL.Path)
-	for _, router := range(h.Routers) {
-		if router.isFile && strings.HasPrefix(path, router.uri) {
-			return router.handle, http.StatusOK, true
-		}
-		if path == router.uri {
-            if router.method == "" || in(method, strings.ToUpper(router.method)) {
-				return router.handle, http.StatusOK, false
-			} else {
-				return router.handle, http.StatusMethodNotAllowed, false
-			}
-		}
-	}
-	return nil, http.StatusNotFound, false
-}
-
-func StaticUrl(staticPath, filePath string){
-
-}
-
-func Router(uri string, method string, handleFunc handleFunc) {
-	thisRouter := &router{
-		uri:    uri,
-		method: method,
-		isFile: false,
-		handle: handleFunc,
-	}
-	Routers = append(Routers, thisRouter)
+	Routers = append(Routers, r)
 }
 
 func Init() *App {
 	defaultHandler := &handle{
-		Routers: Routers,
-		notAllow: NotAllow,
-		notFound: NotFound,
+		Routers:       Routers,
+		notAllow:      NotAllow,
+		notFound:      NotFound,
+		staticService: StaticService,
 	}
 	app := &App{
 		handle: defaultHandler,
-		addr:    Addr,
-		debug:	Debug,
+		addr:   Addr,
+		debug:  Debug,
 	}
 	return app
 }
 
-func init(){
-    NotAllow = defaultNotAllow
-    NotFound = defaultNotFound
+//默认404
+func defaultNotFound(c *Controller) {
+	fmt.Fprintf(c.Response, "404")
+	return
+}
+
+//默认无此方法
+func defaultNotAllow(c *Controller) {
+	fmt.Fprintf(c.Response, "mothod notAllow")
+	return
+}
+
+//默认静态处理
+func defaultStatic(c *Controller) {
+	handler := http.FileServer(http.Dir(StaticPath))
+	handler.ServeHTTP(c.Response, c.Request)
+	return
+}
+
+func init() {
+	//先将404 等赋给默认方法
+	NotAllow = defaultNotAllow
+	NotFound = defaultNotFound
+	StaticService = defaultStatic
 }
 
 // run server in addr
@@ -129,14 +89,3 @@ func (a *App) Run() error {
 	return server.ListenAndServe()
 }
 
-func defaultNotFound(c *Controller) {
-    fmt.Fprintf(c.Response, "404")
-    return
-}
-
-func defaultNotAllow(c *Controller) {
-    fmt.Fprintf(c.Response, "mothod notAllow")
-    return
-}
-
-//TODO 静态文件

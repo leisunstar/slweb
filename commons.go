@@ -1,17 +1,17 @@
 package web
 
 import (
-    "strings"
+	"strings"
 )
 
 func in(key, list string) bool {
-    if key == "" || list == "" {
-        return false
-    }
-    for _, i := range strings.Split(list, ",") {
-        if key == i {
-            return true
-        }
-    }
-    return false
+	if key == "" || list == "" {
+		return false
+	}
+	for _, i := range strings.Split(list, ",") {
+		if key == i {
+			return true
+		}
+	}
+	return false
 }
