@@ -25,8 +25,6 @@ func (h handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	handle, status, isFile := h.match(r)
 	if isFile {
-		//走静态文件服务器
-		Logs.Debug("来到了文件服务器")
 		h.staticService(c)
 		return
 	}
@@ -52,10 +50,8 @@ func (h handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h handle) match(r *http.Request) (handleFunc, int, bool) {
 	method := r.Method
 	path := strings.ToLower(r.URL.Path)
-	Logs.Debug("path %s", path)
 	for _, router := range h.Routers {
 		if router.isFile && strings.HasPrefix(path, router.uri) {
-			Logs.Debug("过了match")
 			return router.handle, http.StatusOK, true
 		}
 		if path == router.uri {
